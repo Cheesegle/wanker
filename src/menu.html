@@ -100,8 +100,11 @@
   .ghost { flex: 0 0 auto; background: var(--panel); color: var(--txt); border: 1px solid var(--line); padding: 11px 16px; }
   .ghost:hover { border-color: var(--accent2); }
   .linkbtn { background: none; border: 0; color: var(--accent2); font-size: 12px; cursor: pointer; padding: 8px 0 2px; }
+  .dangerbtn { background: none; border: 0; color: #ff6b6b; font-size: 12px; cursor: pointer; padding: 8px 0 2px; }
+  .dangerbtn:hover { color: #ff8a8a; }
   .adv { display: none; }
   .foot { margin-top: 12px; text-align: center; color: var(--muted); font-size: 11px; }
+  .foot .sep { margin: 0 6px; opacity: 0.5; }
 
   /* resize grips */
   .rz { position: absolute; z-index: 20; }
@@ -155,11 +158,11 @@
         </div>
         <div class="row win-only">
           <label>GPU acceleration</label>
-          <span class="switch"><input type="checkbox" id="gpuAccel"><span class="slider"></span></span>
+          <label class="switch"><input type="checkbox" id="gpuAccel"><span class="slider"></span></label>
         </div>
         <div class="row win-only">
           <label>Unlock FPS <span class="hint">(off is smoother when GPU-bound)</span></label>
-          <span class="switch"><input type="checkbox" id="fpsUnlock"><span class="slider"></span></span>
+          <label class="switch"><input type="checkbox" id="fpsUnlock"><span class="slider"></span></label>
         </div>
       </div>
 
@@ -194,7 +197,7 @@
         </div>
         <div class="row">
           <label>Show this menu on startup</label>
-          <span class="switch"><input type="checkbox" id="startupMenu"><span class="slider"></span></span>
+          <label class="switch"><input type="checkbox" id="startupMenu"><span class="slider"></span></label>
         </div>
       </div>
 
@@ -214,7 +217,11 @@
         <button class="primary act" id="playBtn">Launch Game</button>
         <button class="ghost act" id="resumeBtn" style="display:none">Resume</button>
       </div>
-      <div class="foot">Changing rendering flags reloads the game.</div>
+      <div class="foot">
+        Changing rendering flags reloads the game.
+        <br>
+        <button class="dangerbtn" id="quitBtn">Close client</button>
+      </div>
     </div>
 
     <div class="rz n" data-dir="n"></div>
@@ -333,8 +340,15 @@
   $("playBtn").addEventListener("click", () => send({ type: "play", config: gather() }));
   $("resumeBtn").addEventListener("click", () => send({ type: "close" }));
   $("hideBtn").addEventListener("click", () => send({ type: "close" }));
+  $("quitBtn").addEventListener("click", () => send({ type: "quit" }));
 
   window.addEventListener("keydown", (e) => {
+    // Alt+F4 closes the whole client from the menu overlay.
+    if (e.altKey && (e.key === "F4" || e.code === "F4")) {
+      e.preventDefault();
+      send({ type: "quit" });
+      return;
+    }
     if (e.key === "Escape" && inGame) send({ type: "close" });
   });
 

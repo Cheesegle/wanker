@@ -132,6 +132,10 @@ fn main() {
                     overlay_window.set_focus();
                     let _ = menu_webview.focus();
                     send_config(&menu_webview, &cfg, os, game_webview.is_some());
+                } else if game_webview.is_some() {
+                    // Return keyboard focus to the game so it responds
+                    // immediately after the menu is dismissed.
+                    game_window.set_focus();
                 }
             }
 
@@ -203,6 +207,14 @@ fn main() {
                         menu_open = false;
                         overlay_window.set_visible(false);
                         let _ = menu_webview.set_visible(false);
+                        if game_webview.is_some() {
+                            game_window.set_focus();
+                        }
+                    }
+
+                    // Quit the entire client (drops both windows and exits).
+                    "quit" => {
+                        *control_flow = ControlFlow::Exit;
                     }
 
                     // Drag the menu window (mousedown on the title bar).
@@ -234,6 +246,9 @@ fn main() {
                         menu_open = false;
                         overlay_window.set_visible(false);
                         let _ = menu_webview.set_visible(false);
+                        if game_webview.is_some() {
+                            game_window.set_focus();
+                        }
                     }
                 }
             }
@@ -269,6 +284,7 @@ fn start_game(
 
     overlay_window.set_visible(false);
     let _ = menu_webview.set_visible(false);
+    game_window.set_focus();
 }
 
 /// Apply Windows-only Chromium browser args. No-op on other platforms.
