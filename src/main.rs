@@ -82,7 +82,6 @@ fn main() {
     let mut overlay_builder = WindowBuilder::new()
         .with_title("Wankle Client — Menu")
         .with_decorations(false)
-        .with_transparent(true)
         .with_always_on_top(true)
         .with_resizable(true)
         .with_inner_size(LogicalSize::new(620.0, 780.0))
@@ -102,7 +101,6 @@ fn main() {
     let ipc_proxy = proxy.clone();
     let menu_webview = {
         let mut b = WebViewBuilder::new()
-            .with_transparent(true)
             .with_html(MENU_HTML)
             .with_ipc_handler(move |req| {
                 let _ = ipc_proxy.send_event(UserEvent::Ipc(req.body().to_string()));

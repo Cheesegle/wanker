@@ -19,7 +19,10 @@ pub const DEFAULT_FLAGS: &[&str] = &[
     "--enable-zero-copy",
     "--enable-native-gpu-memory-buffers",
     "--enable-threaded-compositing",
-    "--disable-gpu-driver-bug-workarounds",
+    // NOTE: `--disable-gpu-driver-bug-workarounds` is intentionally NOT here.
+    // Those workarounds exist to keep heavy pipelines (e.g. deferred rendering
+    // with many render targets) fast/correct on real drivers; disabling them
+    // tends to make the client slower than a plain browser.
     "--disable-gpu-watchdog",
     "--disable-background-timer-throttling",
     "--disable-renderer-backgrounding",
@@ -50,6 +53,10 @@ pub fn build_browser_args(cfg: &Config) -> String {
         _ => {} // "auto" -> let the engine decide
     }
 
+    // FPS unlock removes vsync / the frame cap. Great when CPU-bound (smaller
+    // input latency, higher fps), but HARMFUL when GPU-bound: the render loop
+    // spins unbounded, the present queue backs up and displayed fps collapses.
+    // Leave it off for heavy graphics; use the CPU throttle instead.
     if cfg.fps_unlock {
         flags.push("--disable-frame-rate-limit".into());
         flags.push("--disable-gpu-vsync".into());

@@ -57,7 +57,9 @@ impl Default for Config {
             use_custom_url: false,
             rendering_api: "auto".to_string(),
             gpu_acceleration: true,
-            fps_unlock: true,
+            // Off by default: safe for GPU-heavy settings. Turn on only if you're
+            // CPU-bound (low graphics) and want uncapped fps.
+            fps_unlock: false,
             cpu_throttle: 1.0,
             priority: "High".to_string(),
             window_mode: "Windowed".to_string(),
