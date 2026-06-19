@@ -1,0 +1,38 @@
+[package]
+name = "wankle-client"
+version = "0.1.0"
+edition = "2021"
+description = "Optimized desktop client for Wankle3D (wankle.online / wanshot.lol)"
+authors = ["wankle-client"]
+
+[[bin]]
+name = "wankle-client"
+path = "src/main.rs"
+
+[dependencies]
+# Cross-platform webview (Chromium/WebView2 on Windows, WebKit elsewhere).
+wry = { version = "0.55", features = ["devtools", "transparent"] }
+# Windowing + event loop. Uses raw-window-handle 0.6, same as wry.
+tao = "0.34"
+# OS-level hotkey so the menu toggles without injecting anything into the page.
+global-hotkey = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5"
+
+# Windows-only "power" features. Versions pinned to exactly match wry 0.55.1 so
+# the ICoreWebView2 we pull from WebViewExtWindows::webview() is the same type.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
+windows-core = "0.61"
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_System_Diagnostics_ToolHelp",
+] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = "symbols"

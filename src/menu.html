@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wankle Client</title>
+<style>
+  :root {
+    --bg: #161922;
+    --bg2: #1c2029;
+    --panel: #222734;
+    --line: #2c3340;
+    --txt: #e6e9f0;
+    --muted: #8a93a6;
+    --accent: #36d39a;
+    --accent2: #2bb5d8;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--txt);
+    background: transparent;
+    -webkit-user-select: none; user-select: none;
+  }
+  .panel {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .titlebar {
+    flex: 0 0 auto; height: 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px 0 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--line);
+    cursor: move;
+  }
+  .titlebar .title { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; }
+  .titlebar .title small { color: var(--muted); font-weight: 400; letter-spacing: 0.5px; margin-left: 8px; }
+  .hidebtn {
+    width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px;
+    background: var(--panel); color: var(--muted); cursor: pointer; font-size: 12px;
+  }
+  .hidebtn:hover { color: var(--txt); border-color: var(--accent2); }
+
+  .content { flex: 1 1 auto; overflow-y: auto; padding: 8px 18px 18px; }
+
+  .note {
+    font-size: 11.5px; color: var(--muted); background: rgba(43,181,216,0.08);
+    border: 1px solid rgba(43,181,216,0.25); border-radius: 8px;
+    padding: 8px 10px; margin: 10px 0 4px; display: none;
+  }
+  .section { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+  .section h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 0; }
+  .row label { font-size: 13.5px; }
+  .row .hint { font-size: 11px; color: var(--muted); }
+  select, input[type="text"], textarea {
+    background: var(--panel); color: var(--txt);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 9px; font-size: 13px; font-family: inherit; outline: none;
+  }
+  select:focus, input:focus, textarea:focus { border-color: var(--accent2); }
+  select { min-width: 170px; }
+  input[type="text"] { width: 100%; }
+  textarea { width: 100%; min-height: 64px; resize: vertical; font-family: ui-monospace, Consolas, monospace; }
+  .full { display: block; margin: 8px 0; }
+  .full label { display: block; font-size: 13.5px; margin-bottom: 6px; }
+
+  .switch { position: relative; width: 42px; height: 24px; flex: 0 0 auto; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: #333a49; border-radius: 24px; transition: 0.15s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: 0.15s;
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider:before { transform: translateX(18px); }
+
+  input[type="range"] { width: 210px; accent-color: var(--accent); }
+  .rangeval { font-variant-numeric: tabular-nums; color: var(--accent); font-size: 13px; min-width: 56px; text-align: right; }
+
+  .disabled { opacity: 0.4; pointer-events: none; }
+
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  button.act { padding: 11px 14px; font-size: 14px; font-weight: 600; border-radius: 10px; border: 0; cursor: pointer; font-family: inherit; }
+  button.act:active { transform: translateY(1px); }
+  .primary { flex: 1; background: var(--accent); color: #06140f; }
+  .primary:hover { background: #41e0a6; }
+  .ghost { flex: 0 0 auto; background: var(--panel); color: var(--txt); border: 1px solid var(--line); padding: 11px 16px; }
+  .ghost:hover { border-color: var(--accent2); }
+  .linkbtn { background: none; border: 0; color: var(--accent2); font-size: 12px; cursor: pointer; padding: 8px 0 2px; }
+  .adv { display: none; }
+  .foot { margin-top: 12px; text-align: center; color: var(--muted); font-size: 11px; }
+
+  /* resize grips */
+  .rz { position: absolute; z-index: 20; }
+  .rz.n { top: 0; left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+  .rz.s { bottom: 0; left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+  .rz.e { right: 0; top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+  .rz.w { left: 0; top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+  .rz.ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+  .rz.nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+  .rz.se { bottom: 0; right: 0; width: 14px; height: 14px; cursor: nwse-resize; }
+  .rz.sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="titlebar" id="dragbar">
+      <span class="title">WANKLE CLIENT<small>F1 toggles this menu</small></span>
+      <button class="hidebtn" id="hideBtn" title="Hide">Hide</button>
+    </div>
+
+    <div class="content">
+      <div class="note" id="platformNote"></div>
+
+      <div class="section">
+        <h2>Server</h2>
+        <div class="row">
+          <label>Site</label>
+          <select id="site">
+            <option value="https://wankle.online">wankle.online</option>
+            <option value="https://wanshot.lol">wanshot.lol</option>
+            <option value="__custom__">Custom URL</option>
+          </select>
+        </div>
+        <div class="full" id="customWrap" style="display:none">
+          <input type="text" id="customUrl" placeholder="https://" />
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Rendering and Performance</h2>
+        <div class="row win-only">
+          <label>Rendering API <span class="hint">(ANGLE backend)</span></label>
+          <select id="renderingApi">
+            <option value="auto">Auto</option>
+            <option value="d3d11">Direct3D 11</option>
+            <option value="d3d9">Direct3D 9</option>
+            <option value="gl">OpenGL</option>
+            <option value="vulkan">Vulkan</option>
+            <option value="swiftshader">SwiftShader (software)</option>
+          </select>
+        </div>
+        <div class="row win-only">
+          <label>GPU acceleration</label>
+          <span class="switch"><input type="checkbox" id="gpuAccel"><span class="slider"></span></span>
+        </div>
+        <div class="row win-only">
+          <label>Unlock FPS <span class="hint">(disable vsync / cap)</span></label>
+          <span class="switch"><input type="checkbox" id="fpsUnlock"><span class="slider"></span></span>
+        </div>
+      </div>
+
+      <div class="section win-only">
+        <h2>Live tuning</h2>
+        <div class="row">
+          <label>CPU throttle <span class="hint">(use when GPU-bound)</span></label>
+          <input type="range" id="throttle" min="1" max="10" step="0.5" value="1">
+          <span class="rangeval" id="throttleVal">Off</span>
+        </div>
+        <div class="row">
+          <label>Process priority</label>
+          <select id="priority">
+            <option>Idle</option>
+            <option>Below Normal</option>
+            <option>Normal</option>
+            <option>Above Normal</option>
+            <option>High</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Window</h2>
+        <div class="row">
+          <label>Mode</label>
+          <select id="windowMode">
+            <option>Windowed</option>
+            <option>Maximized</option>
+            <option>Borderless Fullscreen</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Show this menu on startup</label>
+          <span class="switch"><input type="checkbox" id="startupMenu"><span class="slider"></span></span>
+        </div>
+      </div>
+
+      <button class="linkbtn" id="advToggle">Show advanced</button>
+      <div class="adv" id="advBox">
+        <div class="full">
+          <label>Extra Chromium flags <span class="hint">(one per line)</span></label>
+          <textarea id="extraFlags" placeholder="--some-flag&#10;--another=value"></textarea>
+        </div>
+        <div class="row">
+          <label>Open game DevTools</label>
+          <button class="ghost act" id="devtoolsBtn">Open</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary act" id="playBtn">Launch Game</button>
+        <button class="ghost act" id="resumeBtn" style="display:none">Resume</button>
+      </div>
+      <div class="foot">Changing rendering flags reloads the game.</div>
+    </div>
+
+    <div class="rz n" data-dir="n"></div>
+    <div class="rz s" data-dir="s"></div>
+    <div class="rz e" data-dir="e"></div>
+    <div class="rz w" data-dir="w"></div>
+    <div class="rz ne" data-dir="ne"></div>
+    <div class="rz nw" data-dir="nw"></div>
+    <div class="rz se" data-dir="se"></div>
+    <div class="rz sw" data-dir="sw"></div>
+  </div>
+
+<script>
+  let disabledDefaults = [];
+  let currentOs = "windows";
+  let inGame = false;
+
+  const $ = (id) => document.getElementById(id);
+  const send = (obj) => { try { window.ipc.postMessage(JSON.stringify(obj)); } catch (e) {} };
+  const throttleLabel = (v) => (Math.abs(v - 1) < 0.001 ? "Off" : v + "x");
+
+  window.applyConfig = function (cfg, os, playing) {
+    currentOs = os || "windows";
+    inGame = !!playing;
+    disabledDefaults = cfg.disabled_default_flags || [];
+
+    const known = ["https://wankle.online", "https://wanshot.lol"];
+    $("site").value = cfg.use_custom_url ? "__custom__" : (known.includes(cfg.site) ? cfg.site : "__custom__");
+    $("customUrl").value = cfg.custom_url || "";
+    syncCustom();
+
+    $("renderingApi").value = cfg.rendering_api || "auto";
+    $("gpuAccel").checked = cfg.gpu_acceleration !== false;
+    $("fpsUnlock").checked = !!cfg.fps_unlock;
+
+    const t = cfg.cpu_throttle || 1;
+    $("throttle").value = t;
+    $("throttleVal").textContent = throttleLabel(t);
+    $("priority").value = cfg.priority || "Normal";
+
+    $("windowMode").value = cfg.window_mode || "Windowed";
+    $("startupMenu").checked = cfg.open_menu_on_startup !== false;
+    $("extraFlags").value = (cfg.extra_flags || []).join("\n");
+
+    const winOnly = currentOs !== "windows";
+    document.querySelectorAll(".win-only").forEach((el) => el.classList.toggle("disabled", winOnly));
+    const note = $("platformNote");
+    if (winOnly) {
+      note.style.display = "block";
+      note.textContent = "Rendering-API, GPU-flag, CPU-throttle and priority controls only take effect on Windows. Everything else works here.";
+    } else {
+      note.style.display = "none";
+    }
+
+    $("playBtn").textContent = inGame ? "Apply and Reload" : "Launch Game";
+    $("resumeBtn").style.display = inGame ? "" : "none";
+  };
+
+  function syncCustom() {
+    $("customWrap").style.display = $("site").value === "__custom__" ? "block" : "none";
+  }
+
+  function gather() {
+    const useCustom = $("site").value === "__custom__";
+    return {
+      site: useCustom ? "https://wankle.online" : $("site").value,
+      custom_url: $("customUrl").value,
+      use_custom_url: useCustom,
+      rendering_api: $("renderingApi").value,
+      gpu_acceleration: $("gpuAccel").checked,
+      fps_unlock: $("fpsUnlock").checked,
+      cpu_throttle: parseFloat($("throttle").value),
+      priority: $("priority").value,
+      window_mode: $("windowMode").value,
+      extra_flags: $("extraFlags").value.split("\n").map((s) => s.trim()).filter(Boolean),
+      disabled_default_flags: disabledDefaults,
+      menu_hotkey: "F1",
+      open_menu_on_startup: $("startupMenu").checked,
+      devtools: true,
+    };
+  }
+
+  // window move: mousedown on the title bar (but not the Hide button)
+  $("dragbar").addEventListener("mousedown", (e) => {
+    if (e.target.closest("#hideBtn")) return;
+    if (e.button !== 0) return;
+    send({ type: "drag" });
+  });
+
+  // window resize: mousedown on an edge/corner grip
+  document.querySelectorAll(".rz").forEach((g) => {
+    g.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      send({ type: "resize", dir: g.dataset.dir });
+    });
+  });
+
+  $("site").addEventListener("change", syncCustom);
+  $("advToggle").addEventListener("click", () => {
+    const box = $("advBox");
+    const open = box.style.display === "block";
+    box.style.display = open ? "none" : "block";
+    $("advToggle").textContent = open ? "Show advanced" : "Hide advanced";
+  });
+
+  // live controls
+  $("throttle").addEventListener("input", () => {
+    const v = parseFloat($("throttle").value);
+    $("throttleVal").textContent = throttleLabel(v);
+    send({ type: "throttle", rate: v });
+  });
+  $("priority").addEventListener("change", () => send({ type: "priority", value: $("priority").value }));
+  $("devtoolsBtn").addEventListener("click", () => send({ type: "devtools" }));
+
+  $("playBtn").addEventListener("click", () => send({ type: "play", config: gather() }));
+  $("resumeBtn").addEventListener("click", () => send({ type: "close" }));
+  $("hideBtn").addEventListener("click", () => send({ type: "close" }));
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && inGame) send({ type: "close" });
+  });
+
+  send({ type: "ready" });
+</script>
+</body>
+</html>
