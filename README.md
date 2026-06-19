@@ -1,4 +1,4 @@
-# Wankle Client
+# Wanker
 
 An optimized desktop client for **Wankle3D** (`wankle.online` / `wanshot.lol`),
 built on [tauri-apps/wry](https://github.com/tauri-apps/wry).
